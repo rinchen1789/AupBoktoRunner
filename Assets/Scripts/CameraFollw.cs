@@ -4,23 +4,30 @@ using UnityEngine;
 
 public class CameraFollw : MonoBehaviour
 {
-    
+
 
     public Transform target;
     public float trailDistance = 5.0f;
-    public float heightOffset = 3.0f;
-    public float cameraDelay = 0.02f;
+    public float heightOffset;
+    public float cameraDelay;
 
-    // Update is called once per frame
-    void Update()
+    private Vector3 currentVelocity = Vector3.zero;
+
+    void FixedUpdate()
     {
-        Vector3 followPos = target.position - target.forward * trailDistance;
+        if (target != null)
+        {
+            Vector3 desiredPosition = target.position - target.forward * trailDistance;
+            desiredPosition.y += heightOffset;
 
-        followPos.y += heightOffset;
-        transform.position += (followPos - transform.position) * cameraDelay;
+            transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, cameraDelay);
 
-        transform.LookAt(target.transform);
+            transform.LookAt(target.transform);
+        }
     }
-}
+
+
+
+} 
 
 
