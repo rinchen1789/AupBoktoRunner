@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -9,6 +10,15 @@ public class PlayerMovement : MonoBehaviour
     public Rigidbody playerRigidbody;
     Vector3 mousePosDown;
     public GameObject currentPath;
+    public bool hadJumped = false;
+
+    public bool isSlideing = false;
+
+    public CapsuleCollider playerCollider;
+    private Vector3 originalCenter;
+
+    private float originalHeght;
+
     void OnCollisionEnter(Collision collision)
     {
         // if (collision.gameObject.CompareTag("StraightPath"))
@@ -27,16 +37,27 @@ public class PlayerMovement : MonoBehaviour
         {
             currentPath = collision.transform.parent.parent.gameObject;
             Debug.Log(currentPath);
+            hadJumped = true;
         }
-        
-        
- }
-  void Start()
-  {
-        playerRigidbody = GetComponent<Rigidbody>();
-  }
 
-  void Update()
+        if (collision.collider.CompareTag("Enemy"))
+        {
+            Debug.Log("Player Died");
+            forwardSpeed = 0f;
+        // animator.SetTrigger("Die"); // Ensure "Die" is set up in your Animator
+        Optionally: Destroy(gameObject);
+        }
+
+
+    }
+    void Start()
+    {
+        playerRigidbody = GetComponent<Rigidbody>();
+        originalCenter = playerCollider.center;
+        originalHeght = playerCollider.height;
+    }
+
+    void Update()
     {
         // Move forward continuously
         transform.Translate(Vector3.forward * forwardSpeed * Time.deltaTime);
@@ -77,14 +98,20 @@ public class PlayerMovement : MonoBehaviour
             {
                 if (deltaY > 0)
                 {
-                    Debug.Log("Swap Up");
-                    animator.SetTrigger("Jump");
-                    Jump();
+                    if (hadJumped)
+                    {
+                        Debug.Log("Swap Up");
+                        animator.SetTrigger("Jump");
+                        Jump();
+                    }
+
                 }
                 else if (deltaY < 0)
                 {
                     Debug.Log("Swap Down");
                     animator.SetTrigger("Slide");
+                    StartCoroutine(SlideCoroutine());
+                    playerRigidbody.AddForce(0, -jumpPower, 0, ForceMode.Impulse);
                 }
             }
         }
@@ -92,5 +119,26 @@ public class PlayerMovement : MonoBehaviour
     private void Jump()
     {
         playerRigidbody.AddForce(0, jumpPower, 0, ForceMode.Impulse);
-    }
+        hadJumped = false;
+    }
+
+    void Slide()
+    {
+
+        playerCollider.height = 1f;
+        playerCollider.center = new Vector3(0, 0.5f, 0);
+    }
+    void Slideend()
+    {
+        playerCollider.height = originalHeght;
+        playerCollider.center = originalCenter;
+    }
+    IEnumerator SlideCoroutine()
+    {
+        isSlideing = true;
+        Slide();
+        yield return new WaitForSeconds(0.8f);
+        Slideend();
+        isSlideing = false;
+    }
 }
